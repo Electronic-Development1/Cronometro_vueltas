@@ -12,7 +12,7 @@ en_carrera = False
 piloto_actual = ""
 
 print("\n== CRONOMETRO SQUALO VTH ==")
-print("Comandos: [1] Iniciar | [ENTER] Vuelta | [D] Registrar Daño | [P] Cambiar Piloto | [3] Salir")
+print("Comandos: [1] Iniciar | [ENTER] Vuelta | [D] Registrar Daño | [P] Parada en Pits | [3] Salir")
 
 while True:
     comando = input(">> ").lower()
@@ -47,13 +47,25 @@ while True:
         datos_incidentes.append(resultado_danio)
         print(f">>> Incidente guardado en Vuelta {v_actual}")
 
-    # 4. CAMBIO DE PILOTO
+    # 4. PARADA EN PITS / CAMBIO DE PILOTO
     elif comando == 'p' and en_carrera:
-        v_actual = len(vueltas) + 1
-        resultado_cambio = pits.cambio_piloto(v_actual)
+        registro, tiempo_vuelta_inicio, tiempo_total_acumulado = meta.registrar_vuelta(
+            vueltas, 
+            tiempo_vuelta_inicio, 
+            tiempo_total_acumulado,
+            piloto_actual
+        )
+        vueltas.append(registro)
+        print(f"In-Lap Vuelta {registro[0]} [{piloto_actual}]: {registro[1]}")
+
+        v_actual = len(vueltas)
+        resultado_cambio = pits.registrar_pits(v_actual, piloto_actual)
+        
         piloto_actual = resultado_cambio["Piloto"]
         datos_incidentes.append(resultado_cambio)
-        print(f">>> Cambio registrado. Piloto actual: {piloto_actual}")
+        print(f">>> Cambio completado. Sale a pista: {piloto_actual}")
+        
+        tiempo_vuelta_inicio = time.time()
 
     # 5. SALIR
     elif comando == '3':
