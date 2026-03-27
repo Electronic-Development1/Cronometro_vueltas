@@ -2,6 +2,7 @@ import pandas as pd
 import time
 import CronometroMetaMeta as meta
 import CronometroDaños as danos 
+import CronometroCambioPilotoPits as pits
 
 vueltas = []
 datos_incidentes = []
@@ -11,7 +12,7 @@ en_carrera = False
 piloto_actual = ""
 
 print("\n== CRONOMETRO SQUALO VTH ==")
-print("Comandos: [1] Iniciar | [ENTER] Vuelta | [D] Registrar Daño | [3] Salir")
+print("Comandos: [1] Iniciar | [ENTER] Vuelta | [D] Registrar Daño | [P] Cambiar Piloto | [3] Salir")
 
 while True:
     comando = input(">> ").lower()
@@ -31,11 +32,11 @@ while True:
         registro, tiempo_vuelta_inicio, tiempo_total_acumulado = meta.registrar_vuelta(
             vueltas, 
             tiempo_vuelta_inicio, 
-            tiempo_total_acumulado
+            tiempo_total_acumulado,
+            piloto_actual
         )
-        registro_con_piloto = registro + (piloto_actual,)
-        vueltas.append(registro_con_piloto)
-        
+        vueltas.append(registro)
+
         signo = "+" if registro[2] > 0 else "-"
         print(f"Vuelta {registro[0]} [{piloto_actual}]: {registro[1]} ({signo}{abs(registro[2]):.2f}s)")
 
@@ -46,7 +47,15 @@ while True:
         datos_incidentes.append(resultado_danio)
         print(f">>> Incidente guardado en Vuelta {v_actual}")
 
-    # 4. SALIR
+    # 4. CAMBIO DE PILOTO
+    elif comando == 'p' and en_carrera:
+        v_actual = len(vueltas) + 1
+        resultado_cambio = pits.cambio_piloto(v_actual)
+        piloto_actual = resultado_cambio["Piloto"]
+        datos_incidentes.append(resultado_cambio)
+        print(f">>> Cambio registrado. Piloto actual: {piloto_actual}")
+
+    # 5. SALIR
     elif comando == '3':
         if vueltas:
             mensaje = meta.guardar_excel(vueltas, "Reporte_Final.csv")

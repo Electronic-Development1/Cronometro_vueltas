@@ -6,16 +6,13 @@ def formatear_tiempo(segundos):
     segundos_restantes = segundos % 60
     return f"{minutos:02d}:{segundos_restantes:05.2f}"
 
-def registrar_vuelta(vueltas_lista, tiempo_vuelta_inicio, tiempo_total_acumulado):
+def registrar_vuelta(vueltas_lista, tiempo_vuelta_inicio, tiempo_total_acumulado, piloto):
     tiempo_actual = time.time()
     
-    # Calculamos duración de esta vuelta
     vuelta_segundos = tiempo_actual - tiempo_vuelta_inicio
     nuevo_tiempo_total = tiempo_total_acumulado + vuelta_segundos
 
-    # Diferencia con la vuelta anterior (tu lógica original)
     if vueltas_lista:
-        # Buscamos en el último registro guardado (formato: vuelta, tiempo_str, diff, global_str)
         ultima_vuelta_str = vueltas_lista[-1][1] 
         ult_min, ult_sec = map(float, ultima_vuelta_str.split(":"))
         ultimos_segundos = ult_min * 60 + ult_sec
@@ -25,15 +22,14 @@ def registrar_vuelta(vueltas_lista, tiempo_vuelta_inicio, tiempo_total_acumulado
 
     vuelta_num = len(vueltas_lista) + 1
     
-    # Creamos el registro de la vuelta
     registro = (
         vuelta_num,
         formatear_tiempo(vuelta_segundos),
         diferencia,
-        formatear_tiempo(nuevo_tiempo_total)
+        formatear_tiempo(nuevo_tiempo_total),
+        piloto
     )
 
-    # Devolvemos: el registro, el nuevo tiempo de inicio para la sig. vuelta y el acumulado global
     return registro, tiempo_actual, nuevo_tiempo_total
 
 def guardar_excel(vueltas, nombre_archivo="vueltasMetaMeta.csv"):
@@ -45,9 +41,8 @@ def guardar_excel(vueltas, nombre_archivo="vueltasMetaMeta.csv"):
     mejor_vuelta = None
 
     for v in vueltas:
-        data.append([v[0], v[1], f"{v[2]:.2f}s", v[3]])
+        data.append([v[0], v[1], f"{v[2]:.2f}s", v[3], v[4]]) 
         
-        # Lógica para encontrar la mejor vuelta para el reporte final
         min_, sec_ = map(float, v[1].split(":"))
         segundos_v = min_ * 60 + sec_
         if segundos_v < mejor_tiempo:
@@ -56,7 +51,7 @@ def guardar_excel(vueltas, nombre_archivo="vueltasMetaMeta.csv"):
 
     df = pd.DataFrame(
         data,
-        columns=["Número de vuelta", "Tiempo por vuelta", "Diferencia", "Tiempo global"]
+        columns=["Número de vuelta", "Tiempo por vuelta", "Diferencia", "Tiempo global", "Piloto"]
     )
     df.to_csv(nombre_archivo, index=False)
     return f"Exportado a {nombre_archivo}. Mejor vuelta: {mejor_vuelta} ({formatear_tiempo(mejor_tiempo)})"
