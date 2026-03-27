@@ -1,131 +1,62 @@
 import pandas as pd
 import time
 
-# Función para formatear tiempo mm:ss.ms
 def formatear_tiempo(segundos):
     minutos = int(segundos // 60)
     segundos_restantes = segundos % 60
     return f"{minutos:02d}:{segundos_restantes:05.2f}"
 
-# Variables
-tiempo_inicio = None
-tiempo_vuelta_inicio = None
-tiempo_vuelta_acumulado = 0
-tiempo_total_acumulado = 0
-en_ejecucion = False
+def registrar_vuelta(vueltas_lista, tiempo_vuelta_inicio, tiempo_total_acumulado):
+    tiempo_actual = time.time()
+    
+    # Calculamos duración de esta vuelta
+    vuelta_segundos = tiempo_actual - tiempo_vuelta_inicio
+    nuevo_tiempo_total = tiempo_total_acumulado + vuelta_segundos
 
-# Lista para guardar vueltas
-vueltas = []
-
-# Menú
-print("\n== Cronómetro para registrar vueltas (Meta - Meta)==")
-print("Comandos:")
-print("  [1] Iniciar")
-print("  [2] Registrar vuelta")
-print("  [3] Salir y guardar archivo Excel")
-
-# Bucle principal
-while True:
-
-    comando = input(">> ")
-
-    # INICIAR
-    if comando == '1':
-
-        if not en_ejecucion:
-            if tiempo_inicio is None:
-                tiempo_inicio = time.time()
-
-            tiempo_vuelta_inicio = time.time()
-            en_ejecucion = True
-
-            print("Cronómetro iniciado.")
-
-        else:
-            print("El cronómetro ya está en marcha.")
-
-    # REGISTRAR VUELTA
-    elif comando == '2':
-
-        if en_ejecucion:
-
-            tiempo_actual = time.time()
-
-            tiempo_vuelta_acumulado += tiempo_actual - tiempo_vuelta_inicio
-            tiempo_total_acumulado += tiempo_vuelta_acumulado
-
-            vuelta_segundos = tiempo_vuelta_acumulado
-
-            # Diferencia con la vuelta anterior
-            if vueltas:
-
-                ultima_vuelta = vueltas[-1][1]
-
-                ult_min, ult_sec = map(float, ultima_vuelta.split(":"))
-                ultimos_segundos = ult_min * 60 + ult_sec
-
-                diferencia = vuelta_segundos - ultimos_segundos
-
-            else:
-                diferencia = 0
-
-            vuelta_num = len(vueltas) + 1
-
-            vueltas.append((
-                vuelta_num,
-                formatear_tiempo(vuelta_segundos),
-                diferencia,
-                formatear_tiempo(tiempo_total_acumulado)
-            ))
-
-            signo = "+" if diferencia > 0 else "-"
-
-            print(
-                f"Vuelta {vuelta_num}: {formatear_tiempo(vuelta_segundos)} "
-                f"({signo}{abs(diferencia):.2f}s) | Tiempo global: {formatear_tiempo(tiempo_total_acumulado)}"
-            )
-
-            tiempo_vuelta_acumulado = 0
-            tiempo_vuelta_inicio = time.time()
-
-        else:
-            print("Debes iniciar el cronómetro primero con '1'.")
-
-    # SALIR
-    elif comando == '3':
-        break
-
+    # Diferencia con la vuelta anterior (tu lógica original)
+    if vueltas_lista:
+        # Buscamos en el último registro guardado (formato: vuelta, tiempo_str, diff, global_str)
+        ultima_vuelta_str = vueltas_lista[-1][1] 
+        ult_min, ult_sec = map(float, ultima_vuelta_str.split(":"))
+        ultimos_segundos = ult_min * 60 + ult_sec
+        diferencia = vuelta_segundos - ultimos_segundos
     else:
-        print("Comando no reconocido.")
+        diferencia = 0
 
-# Exportar a Excel
-if vueltas:
+    vuelta_num = len(vueltas_lista) + 1
+    
+    # Creamos el registro de la vuelta
+    registro = (
+        vuelta_num,
+        formatear_tiempo(vuelta_segundos),
+        diferencia,
+        formatear_tiempo(nuevo_tiempo_total)
+    )
+
+    # Devolvemos: el registro, el nuevo tiempo de inicio para la sig. vuelta y el acumulado global
+    return registro, tiempo_actual, nuevo_tiempo_total
+
+def guardar_excel(vueltas, nombre_archivo="vueltasMetaMeta.csv"):
+    if not vueltas:
+        return "No se registraron vueltas."
 
     data = []
-    mejor_vuelta = None
     mejor_tiempo = float("inf")
+    mejor_vuelta = None
 
     for v in vueltas:
-
         data.append([v[0], v[1], f"{v[2]:.2f}s", v[3]])
-
+        
+        # Lógica para encontrar la mejor vuelta para el reporte final
         min_, sec_ = map(float, v[1].split(":"))
-        segundos_vuelta = min_ * 60 + sec_
-
-        if segundos_vuelta < mejor_tiempo:
-            mejor_tiempo = segundos_vuelta
+        segundos_v = min_ * 60 + sec_
+        if segundos_v < mejor_tiempo:
+            mejor_tiempo = segundos_v
             mejor_vuelta = v[0]
 
     df = pd.DataFrame(
         data,
         columns=["Número de vuelta", "Tiempo por vuelta", "Diferencia", "Tiempo global"]
     )
-
-    nombre_archivo = "vueltasMetaMeta.csv"
     df.to_csv(nombre_archivo, index=False)
-
-    print(f"\nDatos exportados exitosamente a '{nombre_archivo}'")
-    print(f"La mejor vuelta fue la {mejor_vuelta} con tiempo {formatear_tiempo(mejor_tiempo)}")
-
-else:
-    print("No se registraron vueltas.")
+    return f"Exportado a {nombre_archivo}. Mejor vuelta: {mejor_vuelta} ({formatear_tiempo(mejor_tiempo)})"
